@@ -3,32 +3,25 @@
 // Maison Arduino
 
 // On ajoute les librairies
-#include <Servo.h>              // Permet de gérer les moteurs
+#include <Servo.h>              // Permet de gérer les servomoteurs
 #include <Wire.h>               // Permet de gérer les connections I2C
 #include <LiquidCrystal_I2C.h>  // Pour les écrans LCD avec connections I2C
 
-// On initialise l'adresse de communication I2C à la pin 0x27
+// On initialise l'adresse de communication avec l'écran I2C à la pin 0x27
 // Un maximum de 16 caractères par ligne
-// Avec 2 lignes au total
-LiquidCrystal_I2C mylcd(0x27, 16, 2);
+// Avec 2 lignes au total (ligne 0 et ligne 1)
+LiquidCrystal_I2C mylcd(0x27, 16, 2); // Définir l'instance I2C
 
 // On initialise les deux moteurs aux pins digitales 9 et 10
-Servo servo_10;
-Servo servo_9;
+Servo servoPorte; // Le servomoteur de la porte
+Servo servoFenetre; // Le servomoteur de la fenetre
 
-int bouton1Val;     //set variable bouton1Val
-int bouton2Val;     //set variable bouton2Val
+// TODO changer le commentaire de chaque var
 int button1;        //set variable button1
 int button2;        //set variable button2
 String fans_char;   //string type variable fans_char
 int fans_val;       //set variable fans_char
-int flag;           //set variable flag
-int flag2;          //set variable flag2
-int flag3;          //set variable flag3
-int gas;            //set variable gas
-int infrar;         //set variable infrar
 String led2;        //string type variable led2
-int light;          //set variable light
 String pass;        //string type variable pass
 String passwd;      //string type variable passwd
 
@@ -37,136 +30,40 @@ int servo1_angle;   //set variable light
 String servo2;      //string type variable servo2
 int servo2_angle;   //set variable servo2_angle
 
-int soil;           //set variable soil
 int val;            //set variable val
 int value_led2;     //set variable value_led2
-int water;          //set variable water
 
-int length;
+int longueurDeLaToune = 0; // Permet de retrouver facilement la longueur d'une toune à partir de son tableau
 
-// Constantes des pins
-const int tonepin = 3;  //set the signal end of passive buzzer to digital 3
-const int servoFenetrePin = 9;
-
-// define name of every sound frequency
-const int D0 = -1;
-const int D1 = 262;
-const int D2 = 293;
-const int D3 = 329;
-const int D4 = 349;
-const int D5 = 392;
-const int D6 = 440;
-const int D7 = 494;
-const int M1 = 523;
-const int M2 = 586;
-const int M3 = 658;
-const int M4 = 697;
-const int M5 = 783;
-const int M6 = 879;
-const int M7 = 987;
-const int H1 = 1045;
-const int H2 = 1171;
-const int H3 = 1316;
-const int H4 = 1393;
-const int H5 = 1563;
-const int H6 = 1755;
-const int H7 = 1971;
-
-const int WHOLE = 1;
-const int HALF = 0.5;
-const int QUARTER = 0.25;
-const int EIGHTH = 0.25;
-const int SIXTEENTH = 0.625;
-
-//set sound play frequency
-int tune[] = {
-  M3, M3, M4, M5,
-  M5, M4, M3, M2,
-  M1, M1, M2, M3,
-  M3, M2, M2,
-  M3, M3, M4, M5,
-  M5, M4, M3, M2,
-  M1, M1, M2, M3,
-  M2, M1, M1,
-  M2, M2, M3, M1,
-  M2, M3, M4, M3, M1,
-  M2, M3, M4, M3, M2,
-  M1, M2, D5, D0,
-  M3, M3, M4, M5,
-  M5, M4, M3, M4, M2,
-  M1, M1, M2, M3,
-  M2, M1, M1
-};
-
-//set music beat
-float durt[] = {
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1 + 0.5,
-  0.5,
-  1 + 1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1 + 0.5,
-  0.5,
-  1 + 1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  0.5,
-  0.5,
-  1,
-  1,
-  1,
-  0.5,
-  0.5,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  0.5,
-  0.5,
-  1,
-  1,
-  1,
-  1,
-  1 + 0.5,
-  0.5,
-  1 + 1,
-};
-
-
+// Constantes des pins et variables
+const int tonePin = 3;            //set the signal end of passive buzzer to digital 3
+const int servoFenetrePin = 9;    //
+const int servoPortePin = 10;     //
+const int capteurGazPin = A0;     // Pin analogue pour le détecteur de gaz carbonique et autres
+      int gaz = 0;                //set variable gaz
+      int gazDrapeau = 0;         // Drapeau pour vérifier l'état du détecteur de gaz
+const int gazMax = 700;           // Valeur qui permet de déclencher l'alarme de gaz
+const int gazMin = 100;           // Valeur qui permet de désactiver l'alarme de gaz
+const int capteurLumierePin = A1; // Pin analogue pour le détecteur de lumière
+      int lumiere = 0;            //
+const int lumiereMin = 300;       // Valeur qui permet de déclencher la lumière
+const int infrarPin = 2;          //
+      int infrar = 0;             // État du détecteur de movement
+      int lumiereDrapeau = 0;     //
+const int lumierePortePin = 13;   // La LED du Arduino UNO est aussi connecté à la pin 13
+const int capteurPluiePin = A3;   //
+      int pluie = 0;              //
+      int pluieDrapeau;           //set variable pluieDrapeau
+const int pluieMax = 800;         // Valeur qui permet de fermer la porte s'il pleut
+const int capteurEauTerre = A2;   //
+      int eauTerre = 0;           //set variable pluie
+      int eauTerreDrapeau = 0;    //
+const int eauTerreMax = 50;       //
+const int eauTerreMin = 10;       //
+      int boutonGauche = 0;       //set variable boutonGauche
+      int boutonDroit = 0;        //set variable boutonDroit
+const int boutonGauchePin = 4;    //set variable boutonGauche
+const int boutonDroitPin = 8;     //set variable boutonDroit
 void setup() {
   Serial.begin(9600); // Initialise et active la console
 
@@ -175,38 +72,43 @@ void setup() {
   
   // On affiche une demande de mot de passe sur l'écran LCD à partir
   // de la première ligne et de la première colonne
+  // TODO changer la gestion du mot de passe
   mylcd.setCursor(1 - 1, 1 - 1);
   mylcd.print("password:");
 
-  servo_9.attach(servoFenetrePin);    //make servo connect to digital 9
-  servo_10.attach(10);  //make servo connect to digital 10
-  servo_9.write(0);     //set servo connected digital 9 to 0°
-  servo_10.write(0);    //set servo connected digital 10 to 0°
-  delay(300);
+  servoFenetre.attach(servoFenetrePin);   // make servo connect to digital 9
+  servoPorte.attach(servoPortePin);       // make servo connect to digital 10
+  servoFenetre.write(0);                  // Servo fenetre à 0° TODO à reviser
+  servoPorte.write(0);                    // Servo porte à 0°
+  delay(300); // TODO à tester
 
   pinMode(7, OUTPUT);     //set digital 7 to output
   pinMode(6, OUTPUT);     //set digital 6 to output
   digitalWrite(7, HIGH);  //set digital 7 to high level
   digitalWrite(6, HIGH);  //set digital 6 to high level
 
-  pinMode(4, INPUT);    //set digital 4 to input
-  pinMode(8, INPUT);    //set digital 8 to input
-  pinMode(2, INPUT);    //set digital 2 to input
+  pinMode(boutonGauchePin, INPUT);    //set digital 4 to input
+  pinMode(boutonDroitPin, INPUT);    //set digital 8 to input
+  pinMode(infrarPin, INPUT);    //set digital 2 to input
   pinMode(3, OUTPUT);   //set digital 3 to output
-  pinMode(A0, INPUT);   //set A0 to input
-  pinMode(A1, INPUT);   //set A1 to input
-  pinMode(13, OUTPUT);  //set digital 13 to input
-  pinMode(A3, INPUT);   //set A3 to input
-  pinMode(A2, INPUT);   //set A2 to input
+  pinMode(capteurGazPin, INPUT);   //set capteurGazPin to input
+  pinMode(capteurLumierePin, INPUT);   //set capteurLumierePin to input
+  pinMode(lumierePortePin, OUTPUT);  //set digital 13 to input
+  pinMode(capteurPluiePin, INPUT);   //set A3 to input
+  pinMode(capteurEauTerre, INPUT);   //set A2 to input
 
-  pinMode(12, OUTPUT);                      //set digital 12 to output
-  pinMode(5, OUTPUT);                       //set digital 5 to output
-  pinMode(3, OUTPUT);                       //set digital 3 to output
-  length = sizeof(tune) / sizeof(tune[0]);  //set the value of length
+  pinMode(12, OUTPUT);  //set digital 12 to output
+  pinMode(5, OUTPUT);   //set digital 5 to output
+  pinMode(3, OUTPUT);   //set digital 3 to output
+  // longueurDeLaToune = sizeof(tune) / sizeof(tune[0]);  //set the value of longueurDeLaToune
+
+  // TODO debug
+  Serial.println(F("Maison original - V1.0 - Fin du setup"));
 }
 
 void loop() {
   auto_sensor();
+  door();
   if (Serial.available() > 0)  //serial reads the characters
   {
     val = Serial.read();  //set val to character read by serial    Serial.println(val);//output val character in new lines
@@ -214,10 +116,10 @@ void loop() {
   }
   switch (val) {
     case 'a':                  //if val is character 'a'，program will circulate
-      digitalWrite(13, HIGH);  //set digital 13 to high level，LED 	lights up
+      digitalWrite(lumierePortePin, HIGH);  //set digital 13 to high level，LED 	lights up
       break;                   //exit loop
     case 'b':                  //if val is character 'b'，program will circulate
-      digitalWrite(13, LOW);   //Set digital 13 to low level, LED is off
+      digitalWrite(lumierePortePin, LOW);   //Set digital 13 to low level, LED is off
       break;                   //exit loop
     case 'c':                  //if val is character 'c'，program will circulate
       digitalWrite(12, HIGH);  //set digital 12 to high level，NO of relay is connected to COM
@@ -226,45 +128,45 @@ void loop() {
       digitalWrite(12, LOW);   //set digital 12 to low level，NO of relay is disconnected to COM
       break;                  //exit loop
     case 'e':                 //if val is character 'e'，program will circulate
-      music1();               //play birthday song
+      // music1();               //play birthday song
       break;                  //exit loop
     case 'f':                 //if val is character 'f'，program will circulate
-      music2();               //play ode to joy song
+      // music2();               //play ode to joy song
       break;                  //exit loop
     case 'g':                 //if val is character 'g'，program will circulate
       noTone(3);              //set digital 3 to stop playing music
       break;                  //exit loop
     case 'h':                 //if val is character 'h'，program will circulate
-      Serial.println(light);  //output the value of variable light in new lines
+      Serial.println(lumiere);  //output the value of variable light in new lines
       delay(100);
       break;                //exit loop
     case 'i':               //if val is character 'i'，program will circulate
-      Serial.println(gas);  //output the value of variable gas in new lines
+      Serial.println(gaz);  //output the value of variable gaz in new lines
       delay(100);
       break;                 //exit loop
     case 'j':                //if val is character 'j'，program will circulate
-      Serial.println(soil);  //output the value of variable soil in new lines
+      Serial.println(eauTerre);  //output the value of variable eauTerre in new lines
       delay(100);
       break;                  //exit loop
     case 'k':                 //if val is character 'k'，program will circulate
-      Serial.println(water);  //output the value of variable water in new lines
+      Serial.println(pluie);  //output the value of variable pluie in new lines
       delay(100);
       break;               //exit loop
     case 'l':              //if val is character 'l'，program will circulate
-      servo_9.write(180);  //set servo connected to digital 9 to 180°
+      servoFenetre.write(180);  //set servo connected to digital 9 to 180°
       delay(500);
       break;   //exit loop
     case 'm':  //if val is character 'm'，program will circulate
-      servo_9.write(0);
+      servoFenetre.write(0);
       ;  //set servo connected to digital 9 to 0°
       delay(500);
       break;                //exit loop
     case 'n':               //if val is character 'n'，program will circulate
-      servo_10.write(180);  //set servo connected to digital 10 to 180°
+      servoPorte.write(180);  //set servo connected to digital 10 to 180°
       delay(500);
       break;              //exit loop
     case 'o':             //if val is character 'o'，program will circulate
-      servo_10.write(0);  //set servo connected to digital 10 to 0°
+      servoPorte.write(0);  //set servo connected to digital 10 to 0°
       delay(500);
       break;                  //exit loop
     case 'p':                 //if val is character 'p'，program will circulate
@@ -284,180 +186,140 @@ void loop() {
   }
 }
 
-////////////////////////set birthday song//////////////////////////////////
-void birthday() {
-  tone(3, 294);  //digital 3 outputs 294HZ sound
-  delay(250);    //delay in 250ms
-  tone(3, 440);
-  delay(250);
-  tone(3, 392);
-  delay(250);
-  tone(3, 532);
-  delay(250);
-  tone(3, 494);
-  delay(500);
-  tone(3, 392);
-  delay(250);
-  tone(3, 440);
-  delay(250);
-  tone(3, 392);
-  delay(250);
-  tone(3, 587);
-  delay(250);
-  tone(3, 532);
-  delay(500);
-  tone(3, 392);
-  delay(250);
-  tone(3, 784);
-  delay(250);
-  tone(3, 659);
-  delay(250);
-  tone(3, 532);
-  delay(250);
-  tone(3, 494);
-  delay(250);
-  tone(3, 440);
-  delay(250);
-  tone(3, 698);
-  delay(375);
-  tone(3, 659);
-  delay(250);
-  tone(3, 532);
-  delay(250);
-  tone(3, 587);
-  delay(250);
-  tone(3, 532);
-  delay(500);
-}
-
-
-
-//detect gas
+//detect gaz
 void auto_sensor() {
-  gas = analogRead(A0);  //assign the analog value of A0 to gas
-  if (gas > 700) {
-    //if variable gas>700
-    flag = 1;  //set variable flag to 1
-    while (flag == 1)
-    //if flag is 1, program will circulate
-    {
-      Serial.println("danger");  //output "danger" in new lines
-      tone(3, 440);
-      delay(125);
-      delay(100);
-      noTone(3);
-      delay(100);
-      tone(3, 440);
-      delay(125);
-      delay(100);
-      noTone(3);
-      delay(300);
-      gas = analogRead(A0);  //gas analog the value of A0 to gas
-      if (gas < 100)         //if variable gas is less than 100
-      {
-        flag = 0;  //set variable flag to 0
-        break;     //exit loop exist to loop
-      }
-    }
-
-  } else
-  //otherwise
+  gaz = analogRead(capteurGazPin);  // Lecture de la valeur de gaz
+  if (gaz > gazMax) 
   {
-    noTone(3);  // digital 3 stops playing music
+    gazDrapeau = 1;
+    // while (gazDrapeau == 1)
+    // //if gazDrapeau is 1, program will circulate
+    // {
+    //   Serial.println("danger");  //output "danger" in new lines
+    //   tone(3, 440);
+    //   delay(125);
+    //   delay(100);
+    //   noTone(3);
+    //   delay(100);
+    //   tone(3, 440);
+    //   delay(125);
+    //   delay(100);
+    //   noTone(3);
+    //   delay(300);
+    //   gaz = analogRead(capteurGazPin);  //gaz analog the value of capteurGazPin to gaz
+    //   noTone(3);
   }
-  light = analogRead(A1);  ////Assign the analog value of A1 to light
-  if (light < 300)         //if variable light is less than 300
+  else if (gaz < gazMin)
   {
-    infrar = digitalRead(2);  //assign the value of digital 2 to infrar
+    gazDrapeau = 0;
+  }
+
+  lumiere = analogRead(capteurLumierePin); // Lecture de la valeur du détecteur de lumière
+  if (lumiere < lumiereMin) // S'il fait noir dehors
+  {
+    lumiereDrapeau = 1;
+    infrar = digitalRead(infrarPin);  //assign the value of digital 2 to infrar
     Serial.println(infrar);   //output the value of variable infrar in new lines
+
     if (infrar == 1) // Mouvement détecté
-    // if variable infra is 1
     {
-      digitalWrite(13, HIGH);  //set digital 13 to high level, LED is on
-    } else                     //Otherwise
+      digitalWrite(lumierePortePin, HIGH);  //set digital 13 to high level, LED is on
+    } 
+    else
     {
-      digitalWrite(13, LOW);  //set digital 13 to low level, LED is off
+      digitalWrite(lumierePortePin, LOW);  //set digital 13 to low level, LED is off
     }
   }
-  water = analogRead(A3);  //assign the analog value of A3 to variable water
-  if (water > 800)
-  // if variable water is larger than 800
+  else
   {
-    flag2 = 1;  //if variable flag 2 to 1
-    while (flag2 == 1)
-    // if flag2 is 1, program will circulate
-    {
-      Serial.println("rain");  //output "rain" in new lines
-      servo_10.write(180);     // set the servo connected to digital 10 to 180°
-      delay(300);              //delay in 300ms
-      delay(100);
-      water = analogRead(A3);  //assign the analog value of A3 to variable water
-      if (water < 30)  // if variable water is less than 30
-      {
-        flag2 = 0;  // set flag2 to 0
-        break;      //exit loop
-      }
-    }
+    lumiereDrapeau = 0; // TODO à tester avec une alarme
+  }  
 
-  } else  //Otherwise
+  pluie = analogRead(capteurPluiePin);  //assign the analog value of A3 to variable pluie
+  if (pluie > pluieMax)
   {
+    pluieDrapeau = 1;
+    // TODO à déplacer avec le traitement des alarmes
+    // TODO peut-on lire l'état d'un servomoteur
+    // while (pluieDrapeau == 1)
+    // // if pluieDrapeau is 1, program will circulate
+    // {
+    Serial.println("Il pleut");
+    servoPorte.write(180);     // set the servo connected to digital 10 to 180°
+    //   delay(300);              //delay in 300ms
+    //   delay(100);
+    pluie = analogRead(capteurPluiePin);  //assign the analog value of A3 to variable pluie
+    //   if (pluie < 30)  // if variable pluie is less than 30
+    //   {
+    //     pluieDrapeau = 0;  // set pluieDrapeau to 0
+    //     break;      //exit loop
+    //   }
+    // }
+  }
+  else if (pluie < 30) 
+  {
+    pluieDrapeau = 0;
+  }
+  else
+  {
+    // TODO à tester
     if (val != 'u' && val != 'n')
     //if val is not equivalent 'u' either 'n'
     {
-      servo_10.write(0);  //set servo connected to digital 10 to 0°
+      servoPorte.write(0);  //set servo connected to digital 10 to 0°
       delay(10);
     }
   }
-  soil = analogRead(A2);  //assign the analog value of A2 to variable soil
-  if (soil > 50)
-  // if variable soil is greater than 50
-  {
-    flag3 = 1;  //set flag3 to 1
-    while (flag3 == 1)
-    //If set flag3 to 1, program will circulate
-    {
-      Serial.println("hydropenia ");  //output "hydropenia " in new lines
-      tone(3, 440);
-      delay(125);
-      delay(100);
-      noTone(3);
-      delay(100);
-      tone(3, 440);
-      delay(125);
-      delay(100);
-      noTone(3);  //digital 3 stops playing sound
-      delay(300);
-      soil = analogRead(A2);  //Assign the analog value of A2 to variable soil
-      if (soil < 10)          //If variable soil<10
-      {
-        flag3 = 0;  //set flag3 to 0
-        break;      //exit loop
-      }
-    }
 
-  } else  //Otherwise
+  eauTerre = analogRead(capteurEauTerre);  //assign the analog value of A2 to variable eauTerre
+  if (eauTerre > eauTerreMax)
   {
-    noTone(3);  //set digital 3 to stop playing music
+    eauTerreDrapeau = 1;  //set eauTerreDrapeau to 1
+    // while (eauTerreDrapeau == 1)
+    // //If set eauTerreDrapeau to 1, program will circulate
+    // {
+    //   Serial.println("hydropenia ");  //output "hydropenia " in new lines
+    //   tone(3, 440);
+    //   delay(125);
+    //   delay(100);
+    //   noTone(3);
+    //   delay(100);
+    //   tone(3, 440);
+    //   delay(125);
+    //   delay(100);
+    //   noTone(3);  //digital 3 stops playing sound
+    //   delay(300);
+    //   eauTerre = analogRead(A2);  //Assign the analog value of A2 to variable eauTerre
+    //   if (eauTerre < 10)          //If variable eauTerre<10
+    //   {
+    //     eauTerreDrapeau = 0;  //set eauTerreDrapeau to 0
+    //     break;      //exit loop
+    //   }
+    // }
+
+  } 
+  else if (eauTerre < eauTerreMin)
+  {
+    eauTerreDrapeau = 0;
+    // noTone(3);
   }
-  door();  //run subroutine
 }
 
 void door() {
-  button1 = digitalRead(4);  // assign the value of digital 4 to button1
+  button1 = digitalRead(boutonGauchePin);  // assign the value of digital 4 to button1
   button2 = digitalRead(8);  //assign the value of digital 8 to button2
-
 
   if (button1 == 0)  //if variablebutton1 is 0
   {
     delay(10);            //delay in 10ms
     while (button1 == 0)  //if variablebutton1 is 0，program will circulate
     {
-      button1 = digitalRead(4);  // assign the value of digital 4 to button1
-      bouton1Val = bouton1Val + 1;   //variable bouton1Val plus 1
+      button1 = digitalRead(boutonGauchePin);  // assign the value of digital 4 to button1
+      boutonGauche = boutonGauche + 1;   //variable boutonGauche plus 1
       delay(100);                // delay in 100ms
     }
   }
-  if (bouton1Val >= 1 && bouton1Val < 5)  //1≤if variablebouton1Val<5
+  if (boutonGauche >= 1 && boutonGauche < 5)  //1≤if variableboutonGauche<5
   {
     Serial.print(".");
     Serial.print("");
@@ -467,8 +329,8 @@ void door() {
     mylcd.setCursor(1 - 1, 2 - 1);
     mylcd.print(pass);
   }
-  if (bouton1Val >= 5)
-  //if variablebouton1Val ≥5
+  if (boutonGauche >= 5)
+  //if variableboutonGauche ≥5
   {
     Serial.print("-");
     passwd = String(passwd) + String("-");  //Set passwd
@@ -488,7 +350,7 @@ void door() {
         //LCD shows "open!" at first character on second row
         mylcd.setCursor(1 - 1, 2 - 1);
         mylcd.print("open!");
-        servo_9.write(100);  //set servo connected to digital 9 to 100°
+        servoFenetre.write(100);  //set servo connected to digital 9 to 100°
         delay(300);
         delay(5000);
         passwd = "";
@@ -517,7 +379,7 @@ void door() {
   if (infrar == 0 && (val != 'l' && val != 't'))
   //if variable infrar is 0 and val is not 'l' either 't'
   {
-    servo_9.write(0);  //set servo connected to digital 9 to 0°
+    servoFenetre.write(0);  //set servo connected to digital 9 to 0°
     delay(50);
   }
   if (button2 == 0)  //if variablebutton2 is 0
@@ -526,9 +388,9 @@ void door() {
     while (button2 == 0)  //if variablebutton2 is 0，program will circulate
     {
       button2 = digitalRead(8);  //assign the value of digital 8 to button2
-      bouton2Val = bouton2Val + 1;   //variable bouton2Val plus 1
+      boutonDroit = boutonDroit + 1;   //variable boutonDroit plus 1
       delay(100);
-      if (bouton2Val >= 15)  //if variablebouton2Val ≥15
+      if (boutonDroit >= 15)  //if variableboutonDroit ≥15
       {
         tone(3, 532);
         delay(125);
@@ -545,24 +407,8 @@ void door() {
       }
     }
   }
-  bouton1Val = 0;  //set bouton1Val to 0
-  bouton2Val = 0;  //set bouton2Val to 0
-}
-
-// Birthday song
-void music1() {
-  birthday();
-}
-//Ode to joy
-void music2() {
-  Ode_to_Joy();
-}
-void Ode_to_Joy()  //play Ode to joy song
-{
-  for (int x = 0; x < length; x++) {
-    tone(tonepin, tune[x]);
-    delay(300 * durt[x]);
-  }
+  boutonGauche = 0;  //set boutonGauche to 0
+  boutonDroit = 0;  //set boutonDroit to 0
 }
 
 //PWM control
@@ -571,13 +417,13 @@ void pwm_control() {
     case 't':  //if val is 't'，program will circulate
       servo1 = Serial.readStringUntil('#');
       servo1_angle = String(servo1).toInt();
-      servo_9.write(servo1_angle);  //set the angle of servo connected to digital 9 to servo1_angle
+      servoFenetre.write(servo1_angle);  //set the angle of servo connected to digital 9 to servo1_angle
       delay(300);
       break;   //exit loop
     case 'u':  //if val is 'u'，program will circulate
       servo2 = Serial.readStringUntil('#');
       servo2_angle = String(servo2).toInt();
-      servo_10.write(servo2_angle);  //set the angle of servo connected to digital 10 to servo2_angle
+      servoPorte.write(servo2_angle);  //set the angle of servo connected to digital 10 to servo2_angle
       delay(300);
       break;   //exit loop
     case 'v':  //if val is 'v'，program will circulate
